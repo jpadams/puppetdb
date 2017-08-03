@@ -991,20 +991,20 @@
                                 :fact_path_id pid
                                 :fact_value_id vid})))
 
-(defn existing-row-ids
+(defn existing-fact-value-ids
   "Returns a map from value to id for each value that's already in the
    named database column."
-  [table column values]
-  (into {}
-        (for [{:keys [value id]}
-              (query-to-vec
-               (format
-                "WITH values AS (SELECT unnest(?) as vals)
-                   SELECT %s AS value, id FROM %s
-                   INNER JOIN values ON values.vals = %s"
-                column table column)
-               (sutils/array-to-param "text" String values))]
-          [value id])))
+  [vhashes]
+  (let [vhashes-param (sutils/array-to-param "bytea" PGobject
+                                             (map sutils/munge-hash-for-storage vhashes))
+        rows (query-to-vec "WITH new_hashes AS (SELECT unnest(?) as h)
+                              SELECT id, encode(value_hash::bytea, 'hex') value_hash FROM fact_values
+                              INNER JOIN new_hashes ON new_hashes.h = value_hash"
+                          vhashes-param)]
+    (->> rows
+         (map (fn [{:keys [value_hash id]}]
+                [value_hash id]))
+         (into {}))))
 
 (defn realize-records!
   "Inserts the records (maps) into the named table and returns them
@@ -1052,8 +1052,7 @@
   [valuemaps]
   (if-let [valuemaps (seq valuemaps)]
     (let [vhashes (map :value_hash valuemaps)
-          existing-vhash-ids (existing-row-ids "fact_values"
-                                               (sutils/sql-hash-as-str "value_hash") vhashes)
+          existing-vhash-ids (existing-fact-value-ids vhashes)
           missing-vhashes (set/difference (set vhashes)
                                           (set (keys existing-vhash-ids)))]
       (into existing-vhash-ids

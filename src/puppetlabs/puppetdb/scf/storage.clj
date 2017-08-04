@@ -1002,8 +1002,7 @@
                               INNER JOIN new_hashes ON new_hashes.h = value_hash"
                           vhashes-param)]
     (->> rows
-         (map (fn [{:keys [value_hash id]}]
-                [value_hash id]))
+         (map (juxt :value_hash :id))
          (into {}))))
 
 (defn realize-records!

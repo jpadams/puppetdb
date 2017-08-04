@@ -73,7 +73,7 @@
          threads (->> (range num-threads)
                       (map (fn [thread-num]
                              (async/thread
-                               (run-fact-bench hostname
+                               (run-fact-bench pdb-hostname
                                                (str thread-num)
                                                num-generations
                                                (/ num-nodes num-threads)

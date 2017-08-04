@@ -23,12 +23,11 @@
 ;; end
 
 (defn sleep-until-queue-empty [base-url]
-  (let [queue-depth-metrics (->
-                             (client/get-metric base-url "puppetlabs.puppetdb.mq:name=global.depth")
-                             (json/parse-string true))]
-    (prn queue-depth-metrics)
+  (let [queue-depth-metrics (-> (client/get-metric base-url "puppetlabs.puppetdb.mq:name=global.depth")
+                                (json/parse-string true))]
     (when-not (zero? (:Count queue-depth-metrics))
-      (Thread/sleep 50)
+      (print "\rQueue depth" (:Count queue-depth-metrics) "         ")
+      (Thread/sleep 1000)
       (recur base-url))))
 
 (defn gen-facts [certname

@@ -13,10 +13,10 @@
 
 (defn get-metric [base-url metric-name]
   (let [url (str (utils/base-url->str base-url)
-                 "/metrics/"
+                 "/mbeans/"
                  (java.net.URLEncoder/encode metric-name "UTF-8"))]
     (:body
-     (http-client/post url {:throw-exceptions false
+     (http-client/get url {:throw-exceptions false
                             :content-type :json
                             :character-encoding "UTF-8"
                             :accept :json}))) )

@@ -1005,16 +1005,16 @@
          (map (juxt :value_hash :id))
          (into {}))))
 
-(defn realize-records!
+(defn realize-fact-values!
   "Inserts the records (maps) into the named table and returns them
   with their new :id values."
-  [table munge-fn records]
+  [records]
   (when (seq records)
     (map #(assoc %1 :id %2)
          records
          (->> records
-              (map munge-fn)
-              (jdbc/insert-multi! table)
+              (map #(update % :value_hash sutils/munge-hash-for-storage))
+              (jdbc/insert-multi! :fact_values)
               (map :id)))))
 
 (defn realize-paths!
@@ -1047,7 +1047,7 @@
 
 (defn realize-values!
   "Ensures that all valuemaps exist in the database and returns a
-  map of value hashes to ids."
+  map of all value hashes to ids."
   [valuemaps]
   (if-let [valuemaps (seq valuemaps)]
     (let [vhashes (map :value_hash valuemaps)
@@ -1058,7 +1058,7 @@
             (->> valuemaps
                  (filter (comp missing-vhashes :value_hash))
                  distinct
-                 (realize-records! :fact_values #(update % :value_hash sutils/munge-hash-for-storage))
+                 (realize-fact-values! )
                  (map #(vector (:value_hash %) (:id %))))))
     {}))
 
